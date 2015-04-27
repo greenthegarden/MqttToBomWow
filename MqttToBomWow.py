@@ -2,9 +2,6 @@
 
 import paho.mqtt.client as mqtt
 
-siteid = 
-siteAuthenticationKey = 
-
 import requests
 import json
 
@@ -60,11 +57,17 @@ def on_message(client, userdata, msg) :
   # need to gather all information before sending report
   # http://wow.metoffice.gov.uk/automaticreading?siteid=123456&siteAuthenticationKey=654321&dateutc=2011-02-02+10%3A32%3A55&winddir=230&windspeedmph=12&windgustmph=12& windgustdir=25&humidity=90&dewptf=68.2&tempf=70&rainin=0&dailyrainin=5&baromin=29.1&soiltempf=25&soilmoisture=25&visibility=25&softwaretype=weathersoftware1.0
   
-  # create string
-  payload['item3'] = 3
-  payload.update({'item3': 3})
+  # create empty dict for data
+  report = {}
   
-  payload.update
+  
+  # create string
+  report['item3'] = 3
+  report.update({'item3': 3})
+  
+  # add report to payload
+  payload.update(report)
+  
   print(msg.topic+" "+str(msg.payload))
   
   # POST with form-encoded data
