@@ -3,4 +3,6 @@ Publish data from a Mqtt Broker to the Bureau of Meteorology Weather Observation
 
 The Bureau of Meteorology provide the [Weather Observations Website (WOW)] (http://bom-wow.metoffice.gov.uk/) to enable the public to lodge and share weather observations, information and photos from personal weather stations.
 
-The Python code subscribes to weather observations from my weather station and formats teh reports for publishing to WOW.
+The Python code subscribes to weather observations from my weather station and formats the reports for publishing to WOW.
+
+NOTE: CODE IS NOT FINISHED AND DOES NOT CURRENTLY WORK!
