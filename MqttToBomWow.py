@@ -5,6 +5,9 @@ import paho.mqtt.client as mqtt
 import requests
 import json
 
+import numericalunits as nu
+nu.reset_units()
+
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
 payload = {'siteid': '917806001',
@@ -57,27 +60,20 @@ def on_message(client, userdata, msg) :
   # need to gather all information before sending report
   # http://wow.metoffice.gov.uk/automaticreading?siteid=123456&siteAuthenticationKey=654321&dateutc=2011-02-02+10%3A32%3A55&winddir=230&windspeedmph=12&windgustmph=12& windgustdir=25&humidity=90&dewptf=68.2&tempf=70&rainin=0&dailyrainin=5&baromin=29.1&soiltempf=25&soilmoisture=25&visibility=25&softwaretype=weathersoftware1.0
   
-  # create empty dict for data
-  report = {}
-  
-  
-  # create string
-  report['item3'] = 3
-  report.update({'item3': 3})
-  
-  # add report to payload
-  payload.update(report)
-  
+  if ( msg.topic is weather/measurement/SHT15_temp ) :
+             report['tempf'] = ( msg.payload × 9/5.0) + 32        # converted to fahrenheit
+  if ( msg.topic is weather/measurement/SHT15_humidity ) :
+             report['humidity'] = msg.payload
+  if ( msg.topic is weather/measurement/BMP085_pressure ) :
+             report['baromin'] = msg.payload
+  if ( msg.topic is weather/measurement/wind_spd ) :
+             report['windspeedmph'] = msg.payload
+  if ( msg.topic is weather/measurement/wind_dir ) :
+             report['winddir'] = msg.payload
+  if ( msg.topic is weather/measurement/rain ) :
+             report['dailyrainin'] = msg.payload
+             
   print(msg.topic+" "+str(msg.payload))
-  
-  # POST with form-encoded data
-  r = requests.post(url, data=payload)
-  
-  # All requests will return a status code.
-  # A success is indicated by 200.
-  # Anything else is a failure.
-  # A human readable error message will accompany all errors in JSON format.
-  print r.json
   
 
 # Code begines here  
@@ -88,3 +84,21 @@ client.on_message = on_message
 client.connect("localhost", 1883, 60) # address of broker, broker port, 
 
 client.loop_forever()
+
+  # create empty dict for data
+  report = {}
+  
+    # add report to payload
+  payload.update(report)
+  
+
+  # POST with form-encoded data
+  r = requests.post(url, data=payload)
+  
+  # All requests will return a status code.
+  # A success is indicated by 200.
+  # Anything else is a failure.
+  # A human readable error message will accompany all errors in JSON format.
+  print r.json
+  
+
