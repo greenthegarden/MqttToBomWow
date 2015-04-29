@@ -8,9 +8,6 @@ import json
 import numericalunits as nu
 nu.reset_units()
 
-from decimal import *
-getcontext().prec = 1  # Set precision of Decimal numbers to 1
-
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
 payload = {'siteid': '917806001',
@@ -72,19 +69,20 @@ def on_message(client, userdata, msg) :
 	if msg.topic == "weather/measurement/SHT15_temp" :
   	# in degrees Celcius
    	# convert to degrees Fahrenheit
-   		getcontext().prec = 3
-		report['tempf'] = Decimal( Decimal(msg.payload) * Decimal(9/5.0) + Decimal(32) )
+		report['tempf'] = float(msg.payload) * (9/5.0) + 32
 	if msg.topic == "weather/measurement/SHT15_humidity" :
   	# as a per centage
 		report['humidity'] = msg.payload
 	if msg.topic is "weather/measurement/BMP085_pressure" :
   	# in mbar
   	# convert to inches
-		report['baromin'] = msg.payload
+  	# 1 millibar (or hectopascal/hPa), is equivalent to 0.02953 inches of mercury (Hg).
+  	# source: http://weatherfaqs.org.uk/node/72
+		report['baromin'] = float(msg.payload) * 0.02953
 	if msg.topic == "weather/measurement/wind_spd" :
   	# in knots
   	# convert to miles per hour
-		report['windspeedmph'] = msg.payload
+		report['windspeedmph'] = float(msg.payload) * 1.15078
 	if msg.topic == "weather/measurement/wind_dir" :
   	# in degrees
 		report['winddir'] = msg.payload
@@ -92,7 +90,7 @@ def on_message(client, userdata, msg) :
   	# in millimetres
   	# convert to inches
   	# need to zero at midnight
-		report['dailyrainin'] = msg.payload
+		report['dailyrainin'] = (float(msg.payload)*nu.mm)/nu.inch
 
 	print("report: {0}".format(report))
 
