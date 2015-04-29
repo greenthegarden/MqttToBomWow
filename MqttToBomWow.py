@@ -60,6 +60,8 @@ def on_message(client, userdata, msg) :
   # need to gather all information before sending report
   # http://wow.metoffice.gov.uk/automaticreading?siteid=123456&siteAuthenticationKey=654321&dateutc=2011-02-02+10%3A32%3A55&winddir=230&windspeedmph=12&windgustmph=12& windgustdir=25&humidity=90&dewptf=68.2&tempf=70&rainin=0&dailyrainin=5&baromin=29.1&soiltempf=25&soilmoisture=25&visibility=25&softwaretype=weathersoftware1.0
   
+  
+  # temperature data
   if ( msg.topic is weather/measurement/SHT15_temp ) :
              report['tempf'] = ( msg.payload × 9/5.0) + 32        # converted to fahrenheit
   if ( msg.topic is weather/measurement/SHT15_humidity ) :
