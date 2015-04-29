@@ -30,9 +30,9 @@ def on_connect(client, userdata, flags, rc) :
   client.subscribe("all/contoller/dst")
 
   # weather station topics
-  client.subscribe("weather/status/#")
+  #client.subscribe("weather/status/#")
   client.subscribe("weather/measurement/#")
-  client.subscribe("weather/sunairplus/#")
+  #client.subscribe("weather/sunairplus/#")
 
 
 # The callback for when a PUBLISH message is received from the server.
