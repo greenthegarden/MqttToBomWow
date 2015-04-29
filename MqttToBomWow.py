@@ -66,7 +66,7 @@ def on_message(client, userdata, msg) :
 	report = {}
 
   # temperature data
-	if ( msg.topic is "weather/measurement/SHT15_temp" ) :
+	if msg.topic == "weather/measurement/SHT15_temp" :
   	# in degrees Celcius
    	# convert to degrees Fahrenheit
 		report['tempf'] = ( msg.payload * 9/5.0) + 32
