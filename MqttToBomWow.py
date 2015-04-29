@@ -8,6 +8,9 @@ import json
 import numericalunits as nu
 nu.reset_units()
 
+from decimal import *
+getcontext().prec = 1  # Set precision of Decimal numbers to 1
+
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
 payload = {'siteid': '917806001',
@@ -66,10 +69,11 @@ def on_message(client, userdata, msg) :
 	report = {}
 
   # temperature data
-	if msg.topic == "weather/measurement/SHT15_temp" :
+	if msg.topic is "weather/measurement/SHT15_temp" :
   	# in degrees Celcius
    	# convert to degrees Fahrenheit
-		report['tempf'] = ( msg.payload * 9/5.0) + 32
+   		getcontext().prec = 3
+		report['tempf'] = Decimal( Decimal(msg.payload) * Decimal(9/5.0) + Decimal(32) )
 	if ( msg.topic is "weather/measurement/SHT15_humidity" ) :
   	# as a per centage
 		report['humidity'] = msg.payload
