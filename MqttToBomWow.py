@@ -66,25 +66,25 @@ def on_message(client, userdata, msg) :
 	report = {}
 
   # temperature data
-	if ( msg.topic is weather/measurement/SHT15_temp ) :
+	if ( msg.topic is "weather/measurement/SHT15_temp" ) :
   	# in degrees Celcius
    	# convert to degrees Fahrenheit
 		report['tempf'] = ( msg.payload * 9/5.0) + 32
-	if ( msg.topic is weather/measurement/SHT15_humidity ) :
+	if ( msg.topic is "weather/measurement/SHT15_humidity" ) :
   	# as a per centage
 		report['humidity'] = msg.payload
-	if ( msg.topic is weather/measurement/BMP085_pressure ) :
+	if ( msg.topic is "weather/measurement/BMP085_pressure" ) :
   	# in milliPascals
   	# convert to inches
 		report['baromin'] = msg.payload
-	if ( msg.topic is weather/measurement/wind_spd ) :
+	if ( msg.topic is "weather/measurement/wind_spd" ) :
   	# in metres per second
   	# convert to miles per hour
 		report['windspeedmph'] = msg.payload
-	if ( msg.topic is weather/measurement/wind_dir ) :
+	if ( msg.topic is "weather/measurement/wind_dir" ) :
   	# in degrees
 		report['winddir'] = msg.payload
-	if ( msg.topic is weather/measurement/rain ) :
+	if ( msg.topic is "weather/measurement/rain" ) :
   	# in millimetres
   	# convert to inches
   	# need to zero at midnight
@@ -115,8 +115,8 @@ client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
-client_ip = "192.168.1.55"
-#client_ip = "localhost"
+#client_ip = "192.168.1.55"
+client_ip = "localhost"
 client.connect(client_ip, 1883, 60) # address of broker, broker port,
 
 client.loop_forever()
