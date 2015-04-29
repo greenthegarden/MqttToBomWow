@@ -70,32 +70,38 @@ def on_message(client, userdata, msg) :
   	# in degrees Celcius
    	# convert to degrees Fahrenheit
 		report['tempf'] = float(msg.payload) * (9/5.0) + 32
+		payload.update(report)
 	if msg.topic == "weather/measurement/SHT15_humidity" :
   	# as a per centage
 		report['humidity'] = msg.payload
-	if msg.topic is "weather/measurement/BMP085_pressure" :
+		payload.update(report)
+	if msg.topic == "weather/measurement/BMP085_pressure" :
   	# in mbar
   	# convert to inches
   	# 1 millibar (or hectopascal/hPa), is equivalent to 0.02953 inches of mercury (Hg).
   	# source: http://weatherfaqs.org.uk/node/72
 		report['baromin'] = float(msg.payload) * 0.02953
+		payload.update(report)
 	if msg.topic == "weather/measurement/wind_spd" :
   	# in knots
   	# convert to miles per hour
 		report['windspeedmph'] = float(msg.payload) * 1.15078
+		payload.update(report)
 	if msg.topic == "weather/measurement/wind_dir" :
   	# in degrees
 		report['winddir'] = msg.payload
+		payload.update(report)
 	if msg.topic == "weather/measurement/rain" :
   	# in millimetres
   	# convert to inches
   	# need to zero at midnight
 		report['dailyrainin'] = (float(msg.payload)*nu.mm)/nu.inch
+		payload.update(report)
 
-	print("report: {0}".format(report))
+	#print("report: {0}".format(report))
 
 	# add report to payload
-	payload.update(report)
+	#payload.update(report)
 
 	print("payload to be sent: {0}".format(payload))
 
