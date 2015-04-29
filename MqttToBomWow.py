@@ -69,26 +69,26 @@ def on_message(client, userdata, msg) :
 	report = {}
 
   # temperature data
-	if msg.topic is "weather/measurement/SHT15_temp" :
+	if msg.topic == "weather/measurement/SHT15_temp" :
   	# in degrees Celcius
    	# convert to degrees Fahrenheit
    		getcontext().prec = 3
 		report['tempf'] = Decimal( Decimal(msg.payload) * Decimal(9/5.0) + Decimal(32) )
-	if ( msg.topic is "weather/measurement/SHT15_humidity" ) :
+	if msg.topic == "weather/measurement/SHT15_humidity" :
   	# as a per centage
 		report['humidity'] = msg.payload
-	if ( msg.topic is "weather/measurement/BMP085_pressure" ) :
-  	# in milliPascals
+	if msg.topic is "weather/measurement/BMP085_pressure" :
+  	# in mbar
   	# convert to inches
 		report['baromin'] = msg.payload
-	if ( msg.topic is "weather/measurement/wind_spd" ) :
-  	# in metres per second
+	if msg.topic == "weather/measurement/wind_spd" :
+  	# in knots
   	# convert to miles per hour
 		report['windspeedmph'] = msg.payload
-	if ( msg.topic is "weather/measurement/wind_dir" ) :
+	if msg.topic == "weather/measurement/wind_dir" :
   	# in degrees
 		report['winddir'] = msg.payload
-	if ( msg.topic is "weather/measurement/rain" ) :
+	if msg.topic == "weather/measurement/rain" :
   	# in millimetres
   	# convert to inches
   	# need to zero at midnight
