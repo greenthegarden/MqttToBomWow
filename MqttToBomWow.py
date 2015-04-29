@@ -5,34 +5,28 @@ import paho.mqtt.client as mqtt
 import requests
 import json
 
+import collections
+
 import numericalunits as nu
 nu.reset_units()
 
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
-payload = {'siteid': '917806001',
-           'siteAuthenticationKey': '123456'
-           }
+payload = collections.OrderedDict()
+payload['siteid'] = '917806001'
+payload['siteAuthenticationKey'] = '123456'
 
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc) :
 
-  print("Connected with result code "+str(rc))
+	print("Connected with result code "+str(rc))
 
-  # Subscribing in on_connect() means that if the connection is lost
-  # the subscriptions will be renewed when reconnecting.
+	# Subscribing in on_connect() means that if the connection is lost
+	# the subscriptions will be renewed when reconnecting.
 
-  # system topics
-  #client.subscribe("$SYS/#")
-
-  # general topics
-  client.subscribe("all/contoller/dst")
-
-  # weather station topics
-  #client.subscribe("weather/status/#")
-  client.subscribe("weather/measurement/#")
-  #client.subscribe("weather/sunairplus/#")
+	# weather station measurement topics
+	client.subscribe("weather/measurement/#")
 
 
 # The callback for when a PUBLISH message is received from the server.
