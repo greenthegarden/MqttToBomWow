@@ -42,7 +42,7 @@ reporttime = 0      # keep track of the time corresponding to the first data for
 reportInterval = 15 # interval (minutes) at which a new report is sent to BoM WOW
 sentreportwithtime = 0	# keep track of the time a report was last sent
 
-new_report = True
+newreport = True
 
 # not sure it an ordereddict is required
 
@@ -72,9 +72,9 @@ def on_message(client, userdata, msg) :
 #	msg_arrival_time = datetime.datetime.now()
 	msg_arrival_time = datetime.datetime.utcnow()
 
-	if new_report == True :
+	if newreport == True :
 		reporttime = msg_arrival_time
-		new_report = False
+		newreport = False
 
 	print(msg.topic+" "+str(msg.payload))
 
@@ -153,5 +153,5 @@ if ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterv
 #  print("POST request status code: {0}".format(r.json))
 
 	# reset flags
-	new_report = True
+	newreport = True
 	sentreportwithtime = reporttime
