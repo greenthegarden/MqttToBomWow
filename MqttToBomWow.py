@@ -146,8 +146,12 @@ while True :
 
 	try :
 
+		print("reporttime: {0}".format(reporttime))
+		print("sentreportwithtime: {0}".format(sentreportwithtime))
+
 		# get current time and if greater than wait send a report
 		reportInterval = 15	# interval (minutes) at which a new report is sent to BoM WOW
+
 		if ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) :
 
 			# add time to report
