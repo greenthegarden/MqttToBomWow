@@ -38,12 +38,12 @@ import datetime
 
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
-global reporttime
-global newreport
-global sentreportwithtime
+#global reporttime
+#global newreport
+#global sentreportwithtime
 
-reporttime = 0      # keep track of the time corresponding to the first data for a new report
-sentreportwithtime = 0	# keep track of the time a report was last sent
+reporttime = datetime.datetime.min          # keep track of the time corresponding to the first data for a new report
+sentreportwithtime = datetime.datetime.min	# keep track of the time a report was last sent
 
 newreport = True
 
@@ -146,8 +146,8 @@ while True :
 
 	try :
 
-		print("reporttime: {0}".format(reporttime))
-		print("sentreportwithtime: {0}".format(sentreportwithtime))
+#		print("reporttime: {0}".format(reporttime))
+#		print("sentreportwithtime: {0}".format(sentreportwithtime))
 
 		# get current time and if greater than wait send a report
 		reportInterval = 15	# interval (minutes) at which a new report is sent to BoM WOW
