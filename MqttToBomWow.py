@@ -141,32 +141,49 @@ client.connect(client_ip, 1883, 60) # address of broker, broker port,
 
 client.loop_forever()
 
-# get current time and if greater than wait send a report
-if ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) :
+# Loop continuously
+while True :
 
-	# add time to report
-	# The date must be in the following format: YYYY-mm-DD HH:mm:ss,
-	# where ':' is encoded as %3A, and the space is encoded as either '+' or %20.
-	# An example, valid date would be: 2011-02-29+10%3A32%3A55, for the 2nd of Feb, 2011 at 10:32:55.
-	# Note that the time is in 24 hour format.
-	# Also note that the date must be adjusted to UTC time - equivalent to the GMT time zone.
-	format = "%Y-%m-%d+%H:%M:%S"
-	datestr = reporttime.strftime(format)
-	datestr.replace(':', '%3A')
-	payload['dateutc'] = datestr
+	try :
 
-	# send report
-	print("payload to be sent: {0}".format(payload))
+		# get current time and if greater than wait send a report
+		if ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) :
 
-  # POST with form-encoded data1
-#  r = requests.post(url, data=payload)
+			# add time to report
+			# The date must be in the following format: YYYY-mm-DD HH:mm:ss,
+			# where ':' is encoded as %3A, and the space is encoded as either '+' or %20.
+			# An example, valid date would be: 2011-02-29+10%3A32%3A55, for the 2nd of Feb, 2011 at 10:32:55.
+			# Note that the time is in 24 hour format.
+			# Also note that the date must be adjusted to UTC time - equivalent to the GMT time zone.
+			format = "%Y-%m-%d+%H:%M:%S"
+			datestr = reporttime.strftime(format)
+			datestr.replace(':', '%3A')
+			payload['dateutc'] = datestr
 
-  # All requests will return a status code.
-  # A success is indicated by 200.
-  # Anything else is a failure.
-  # A human readable error message will accompany all errors in JSON format.
-#  print("POST request status code: {0}".format(r.json))
+			# send report
+			print("payload to be sent: {0}".format(payload))
 
-	# reset flags
-	newreport = True
-	sentreportwithtime = reporttime
+			# POST with form-encoded data1
+		#  r = requests.post(url, data=payload)
+
+			# All requests will return a status code.
+			# A success is indicated by 200.
+			# Anything else is a failure.
+			# A human readable error message will accompany all errors in JSON format.
+		#  print("POST request status code: {0}".format(r.json))
+
+			# reset flags
+			newreport = True
+			sentreportwithtime = reporttime
+
+	except KeyboardInterrupt :      #Triggered by pressing Ctrl+C
+
+		running = False       #Stop thread1
+
+		# Disconnect mqtt client
+		mqttc.loop_stop()
+		mqttc.disconnect()
+
+		print("Bye")
+		break         #Exit
+
