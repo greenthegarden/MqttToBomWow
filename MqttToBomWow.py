@@ -38,11 +38,14 @@ import datetime
 
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
-global reporttime = 0      # keep track of the time corresponding to the first data for a new report
-global reportInterval = 15 # interval (minutes) at which a new report is sent to BoM WOW
-global sentreportwithtime = 0	# keep track of the time a report was last sent
+global reporttime
+global newreport
 
-global newreport = True
+reporttime = 0      # keep track of the time corresponding to the first data for a new report
+reportInterval = 15 # interval (minutes) at which a new report is sent to BoM WOW
+sentreportwithtime = 0	# keep track of the time a report was last sent
+
+newreport = True
 
 # not sure it an ordereddict is required
 
