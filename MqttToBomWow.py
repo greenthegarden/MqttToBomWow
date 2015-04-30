@@ -5,17 +5,20 @@ import paho.mqtt.client as mqtt
 import requests
 import json
 
-import collections
-
 import numericalunits as nu
 nu.reset_units()
 
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
-payload = collections.OrderedDict()
-payload['siteid'] = '917806001'
-payload['siteAuthenticationKey'] = '123456'
+# not sure it an ordereddict is required
 
+#import collections
+
+#payload = collections.OrderedDict()
+#payload['siteid'] = '917806001'
+#payload['siteAuthenticationKey'] = '123456'
+
+payload = {'siteid': '917806001', 'siteAuthenticationKey': '123456'}
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc) :
