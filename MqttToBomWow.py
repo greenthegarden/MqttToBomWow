@@ -150,8 +150,7 @@ while True :
 		reportWait = 2      # time (seconds) to wait to ensure all measurements have been received
 		reportInterval = 15	# interval (minutes) at which a new report is sent to BoM WOW
 
-		if ( ( datetime.datetime.now() - reporttime ) > datetime.timedelta(seconds=reportWait) ) and
-			 ( ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) ) :
+		if ( ( datetime.datetime.now() - reporttime ) > datetime.timedelta(seconds=reportWait) ) and ( ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) ) :
 
 			# add time to report
 			# The date must be in the following format: YYYY-mm-DD HH:mm:ss,
