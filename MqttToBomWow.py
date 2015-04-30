@@ -139,7 +139,7 @@ client.on_message = on_message
 client_ip = "localhost"
 client.connect(client_ip, 1883, 60) # address of broker, broker port,
 
-client.loop_forever()
+client.loop_start()
 
 # Loop continuously
 while True :
