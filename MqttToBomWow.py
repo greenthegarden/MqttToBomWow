@@ -146,13 +146,12 @@ while True :
 
 	try :
 
-#		print("reporttime: {0}".format(reporttime))
-#		print("sentreportwithtime: {0}".format(sentreportwithtime))
-
 		# get current time and if greater than wait send a report
+		reportWait = 2      # time (seconds) to wait to ensure all measurements have been received
 		reportInterval = 15	# interval (minutes) at which a new report is sent to BoM WOW
 
-		if ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) :
+		if ( datetime.datetime.now() - reporttime ) > datetime.timedelta(seconds=reportWait) and
+			 ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) :
 
 			# add time to report
 			# The date must be in the following format: YYYY-mm-DD HH:mm:ss,
@@ -162,7 +161,7 @@ while True :
 			# Also note that the date must be adjusted to UTC time - equivalent to the GMT time zone.
 			format = "%Y-%m-%d+%H:%M:%S"
 			datestr = reporttime.strftime(format)
-			datestr.replace(':', '%3A')
+			datestr = datestr.replace(':', '%3A')
 			payload['dateutc'] = datestr
 
 			# send report
@@ -186,8 +185,8 @@ while True :
 		running = False       #Stop thread1
 
 		# Disconnect mqtt client
-		mqttc.loop_stop()
-		mqttc.disconnect()
+		client.loop_stop()
+		client.disconnect()
 
 		print("Bye")
 		break         #Exit
