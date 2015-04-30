@@ -74,12 +74,14 @@ def on_message(client, userdata, msg) :
 
 #	msg_arrival_time = datetime.datetime.now()
 	msg_arrival_time = datetime.datetime.utcnow()
+	print("Message arrival time is {0}".format(msg_arrival_time))
 
 	global newreport
 	global reporttime
 
 	if newreport == True :
 		reporttime = msg_arrival_time
+		print("New report time is {0}".format(reporttime))
 		newreport = False
 
 	print(msg.topic+" "+str(msg.payload))
