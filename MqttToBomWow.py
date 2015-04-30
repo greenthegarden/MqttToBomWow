@@ -8,7 +8,41 @@ import json
 import numericalunits as nu
 nu.reset_units()
 
+import datetime
+
+# sends a report to the BoM WOW in format
+
+	#  Weather Data (from http://wow.metoffice.gov.uk/support/dataformats)
+
+	# The following is a list of items of weather data that can be uploaded to WOW.
+	# Provide each piece of information as a key/value pair, e.g. winddir=225.5 or tempf=32.2.
+	# Note that values should not be quoted or escaped.
+	# Key	          Value	                                                             Unit
+	# winddir	      Instantaneous Wind Direction	                                     Degrees (0-360)
+	# windspeedmph	Instantaneous Wind Speed                                           Miles per Hour
+	# windgustdir	  Current Wind Gust Direction (using software specific time period)	 0-360 degrees
+	# windgustmph	  Current Wind Gust (using software specific time period)            Miles per Hour
+	# humidity	    Outdoor Humidity                                                   0-100 %
+	# dewptf	      Outdoor Dewpoint                                                   Fahrenheit
+	# tempf	        Outdoor Temperature                                                Fahrenheit
+	# rainin	      Accumulated rainfall in the past 60 minutes                        Inches
+	# dailyrainin	  Inches of rain so far today                                        Inches
+	# baromin	      Barometric Pressure (see note)                                     Inches
+	# soiltempf	    Soil Temperature                                                   Fahrenheit
+	# soilmoisture	% Moisture                                                         0-100 %
+	# visibility	  Visibility                                                         Nautical Miles
+
+
+# http://wow.metoffice.gov.uk/automaticreading?siteid=123456&siteAuthenticationKey=654321&dateutc=2011-02-02+10%3A32%3A55&winddir=230&windspeedmph=12&windgustmph=12& windgustdir=25&humidity=90&dewptf=68.2&tempf=70&rainin=0&dailyrainin=5&baromin=29.1&soiltempf=25&soilmoisture=25&visibility=25&softwaretype=weathersoftware1.0
+
+
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
+
+reporttime = 0      # keep track of the time corresponding to the first data for a new report
+reportInterval = 15 # interval (minutes) at which a new report is sent to BoM WOW
+sentreportwithtime = 0	# keep track of the time a report was last sent
+
+new_report = True
 
 # not sure it an ordereddict is required
 
@@ -35,30 +69,14 @@ def on_connect(client, userdata, flags, rc) :
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg) :
 
+#	msg_arrival_time = datetime.datetime.now()
+	msg_arrival_time = datetime.datetime.utcnow()
+
+	if new_report == True :
+		reporttime = msg_arrival_time
+		new_report = False
+
 	print(msg.topic+" "+str(msg.payload))
-
-	#  Weather Data (from http://wow.metoffice.gov.uk/support/dataformats)
-
-	# The following is a list of items of weather data that can be uploaded to WOW.
-	# Provide each piece of information as a key/value pair, e.g. winddir=225.5 or tempf=32.2.
-	# Note that values should not be quoted or escaped.
-	# Key	          Value	                                                             Unit
-	# winddir	      Instantaneous Wind Direction	                                     Degrees (0-360)
-	# windspeedmph	Instantaneous Wind Speed                                           Miles per Hour
-	# windgustdir	  Current Wind Gust Direction (using software specific time period)	 0-360 degrees
-	# windgustmph	  Current Wind Gust (using software specific time period)            Miles per Hour
-	# humidity	    Outdoor Humidity                                                   0-100 %
-	# dewptf	      Outdoor Dewpoint                                                   Fahrenheit
-	# tempf	        Outdoor Temperature                                                Fahrenheit
-	# rainin	      Accumulated rainfall in the past 60 minutes                        Inches
-	# dailyrainin	  Inches of rain so far today                                        Inches
-	# baromin	      Barometric Pressure (see note)                                     Inches
-	# soiltempf	    Soil Temperature                                                   Fahrenheit
-	# soilmoisture	% Moisture                                                         0-100 %
-	# visibility	  Visibility                                                         Nautical Miles
-
-  # need to gather all information before sending report
-  # http://wow.metoffice.gov.uk/automaticreading?siteid=123456&siteAuthenticationKey=654321&dateutc=2011-02-02+10%3A32%3A55&winddir=230&windspeedmph=12&windgustmph=12& windgustdir=25&humidity=90&dewptf=68.2&tempf=70&rainin=0&dailyrainin=5&baromin=29.1&soiltempf=25&soilmoisture=25&visibility=25&softwaretype=weathersoftware1.0
 
 	report = {}
 
@@ -72,6 +90,9 @@ def on_message(client, userdata, msg) :
   	# as a per centage
 		report['humidity'] = msg.payload
 		payload.update(report)
+	# weather station will not report measurements from pressure sensor
+	# if error code generated when sensor is initialised, or
+	# if error code generated when taking reading
 	if msg.topic == "weather/measurement/BMP085_pressure" :
   	# in mbar
   	# convert to inches
@@ -79,14 +100,16 @@ def on_message(client, userdata, msg) :
   	# source: http://weatherfaqs.org.uk/node/72
 		report['baromin'] = float(msg.payload) * 0.02953
 		payload.update(report)
+	# weather station will not report measurements from the weather sensors
+	# (wind and rain) if error code generated by wind direction reading
+	if msg.topic == "weather/measurement/wind_dir" :
+  	# in degrees
+		report['winddir'] = msg.payload
+		payload.update(report)
 	if msg.topic == "weather/measurement/wind_spd" :
   	# in knots
   	# convert to miles per hour
 		report['windspeedmph'] = float(msg.payload) * 1.15078
-		payload.update(report)
-	if msg.topic == "weather/measurement/wind_dir" :
-  	# in degrees
-		report['winddir'] = msg.payload
 		payload.update(report)
 	if msg.topic == "weather/measurement/rain" :
   	# in millimetres
@@ -94,22 +117,6 @@ def on_message(client, userdata, msg) :
   	# need to zero at midnight
 		report['dailyrainin'] = (float(msg.payload)*nu.mm)/nu.inch
 		payload.update(report)
-
-	#print("report: {0}".format(report))
-
-	# add report to payload
-	#payload.update(report)
-
-	print("payload to be sent: {0}".format(payload))
-
-  # POST with form-encoded data
-#  r = requests.post(url, data=payload)
-
-  # All requests will return a status code.
-  # A success is indicated by 200.
-  # Anything else is a failure.
-  # A human readable error message will accompany all errors in JSON format.
-#  print("POST request status code: {0}".format(r.json))
 
 
 
@@ -125,3 +132,26 @@ client_ip = "localhost"
 client.connect(client_ip, 1883, 60) # address of broker, broker port,
 
 client.loop_forever()
+
+# get current time and if greater than wait send a report
+if ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) :
+
+	# add time to report in format dateutc=2011-02-02+10%3A32%3A55
+	format = "%Y-%m-%d+%H:%M:%S"
+	payload['dateutc'] = reporttime.strftime(format)
+
+	# send report
+	print("payload to be sent: {0}".format(payload))
+
+  # POST with form-encoded data
+#  r = requests.post(url, data=payload)
+
+  # All requests will return a status code.
+  # A success is indicated by 200.
+  # Anything else is a failure.
+  # A human readable error message will accompany all errors in JSON format.
+#  print("POST request status code: {0}".format(r.json))
+
+	# reset flags
+	new_report = True
+	sentreportwithtime = reporttime
