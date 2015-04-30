@@ -74,7 +74,7 @@ def on_message(client, userdata, msg) :
 
 #	msg_arrival_time = datetime.datetime.now()
 	msg_arrival_time = datetime.datetime.utcnow()
-	print("Message arrival time is {0}".format(msg_arrival_time))
+#	print("Message arrival time is {0}".format(msg_arrival_time))
 
 	global newreport
 	global reporttime
@@ -144,14 +144,21 @@ client.loop_forever()
 # get current time and if greater than wait send a report
 if ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) :
 
-	# add time to report in format dateutc=2011-02-02+10%3A32%3A55
+	# add time to report
+	# The date must be in the following format: YYYY-mm-DD HH:mm:ss,
+	# where ':' is encoded as %3A, and the space is encoded as either '+' or %20.
+	# An example, valid date would be: 2011-02-29+10%3A32%3A55, for the 2nd of Feb, 2011 at 10:32:55.
+	# Note that the time is in 24 hour format.
+	# Also note that the date must be adjusted to UTC time - equivalent to the GMT time zone.
 	format = "%Y-%m-%d+%H:%M:%S"
-	payload['dateutc'] = reporttime.strftime(format)
+	datestr = reporttime.strftime(format)
+	datestr.replace(':', '%3A')
+	payload['dateutc'] = datestr
 
 	# send report
 	print("payload to be sent: {0}".format(payload))
 
-  # POST with form-encoded data
+  # POST with form-encoded data1
 #  r = requests.post(url, data=payload)
 
   # All requests will return a status code.
