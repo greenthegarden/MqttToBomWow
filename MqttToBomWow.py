@@ -143,11 +143,11 @@ client.loop_forever()
 # Loop continuously
 while True :
 
-	try :
+	global reporttime
+	global sentreportwithtime
+	global newreport
 
-		global reporttime
-		global sentreportwithtime
-		global newreport
+	try :
 
 		# get current time and if greater than wait send a report
 		reportInterval = 15	# interval (minutes) at which a new report is sent to BoM WOW
