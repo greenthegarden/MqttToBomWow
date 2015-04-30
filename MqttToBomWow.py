@@ -42,7 +42,6 @@ url = 'http://wow.metoffice.gov.uk/automaticreading?'
 #global newreport
 
 reporttime = 0      # keep track of the time corresponding to the first data for a new report
-reportInterval = 15 # interval (minutes) at which a new report is sent to BoM WOW
 sentreportwithtime = 0	# keep track of the time a report was last sent
 
 newreport = True
@@ -146,7 +145,12 @@ while True :
 
 	try :
 
+		global reporttime
+		global sentreportwithtime
+		global newreport
+
 		# get current time and if greater than wait send a report
+		reportInterval = 15	# interval (minutes) at which a new report is sent to BoM WOW
 		if ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) :
 
 			# add time to report
