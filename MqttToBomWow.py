@@ -38,8 +38,8 @@ import datetime
 
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
-global reporttime
-global newreport
+#global reporttime
+#global newreport
 
 reporttime = 0      # keep track of the time corresponding to the first data for a new report
 reportInterval = 15 # interval (minutes) at which a new report is sent to BoM WOW
@@ -74,6 +74,9 @@ def on_message(client, userdata, msg) :
 
 #	msg_arrival_time = datetime.datetime.now()
 	msg_arrival_time = datetime.datetime.utcnow()
+
+	global newreport
+	global reporttime
 
 	if newreport == True :
 		reporttime = msg_arrival_time
