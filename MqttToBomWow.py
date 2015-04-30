@@ -38,8 +38,9 @@ import datetime
 
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
-#global reporttime
-#global newreport
+global reporttime
+global newreport
+global sentreportwithtime
 
 reporttime = 0      # keep track of the time corresponding to the first data for a new report
 sentreportwithtime = 0	# keep track of the time a report was last sent
@@ -142,10 +143,6 @@ client.loop_forever()
 
 # Loop continuously
 while True :
-
-	global reporttime
-	global sentreportwithtime
-	global newreport
 
 	try :
 
