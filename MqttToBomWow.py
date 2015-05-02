@@ -1,17 +1,10 @@
 #!/usr/bin/env python
 
-import paho.mqtt.client as mqtt
-
 import requests
 import json
 
 import numericalunits as nu
 nu.reset_units()
-
-import datetime
-
-import schedule
-import time
 
 
 # sends a report to the BoM WOW in format
@@ -42,21 +35,6 @@ import time
 
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
-msg_arrival_time_local = datetime.datetime.min          # keep track of the time corresponding to the first data for a new report
-msg_arrival_time_utc   = datetime.datetime.min
-sentreportwithtime     = datetime.datetime.now()	# keep track of the time a report was last sent
-
-# define global variables for keeping track of daily data (midnight to midnight)
-tempc_daily_max = -100
-tempc_daily_min = 100
-rainfall_daily = 0
-# define global variables for keeping track of day/night data (9am to 9am)
-tempc_to9_max = -100
-tempc_to9_min = 100
-rainfall_to9 = 0
-rainmm = 0
-dailyrainmm = 0
-
 # not sure it an ordereddict is required
 
 #import collections
@@ -65,8 +43,37 @@ dailyrainmm = 0
 #payload['siteid'] = '917806001'
 #payload['siteAuthenticationKey'] = '123456'
 
+
+# payload initialised with BoM WoW siteid and siteAuthenticationKey
 payload = {'siteid': '917806001', 'siteAuthenticationKey': '123456'}
 
+
+# initialisation of time variables
+
+import datetime
+
+msg_arrival_time_local = datetime.datetime.min    # keep track of the time corresponding to the first data for a new report
+msg_arrival_time_utc   = datetime.datetime.min
+tempc_msg_arrival_time = datetime.datetime.min		# used to ensure tempc measurement is not too old for dewpoint calculation
+sentreportwithtime     = datetime.datetime.now()	# keep track of the time a report was last sent
+
+
+# global variables
+tempc = -100
+# to keep track of daily data (midnight to midnight)
+tempc_daily_max = -100
+tempc_daily_min = 100
+rainfall_daily = 0
+# global variables to keep track of day/night data (9am to 9am)
+tempc_to9_max = -100
+tempc_to9_min = 100
+rainfall_to9 = 0
+dailyrainmm = 0
+# global variables to keep track of hourly data
+rainmm = 0
+
+
+# define functions to zero variables
 
 def zero_data_on_hour() :
 	print("data reset on hour")
@@ -83,6 +90,12 @@ def zero_data_at_midnight() :
 	global dailyrainmm
 	dailyrainmm = 0
 
+
+# define schedules to zero variables
+
+import schedule
+import time
+
 schedule.every().hour.do(zero_data_on_hour)
 schedule.every().day.at("9:00").do(zero_data_at_9)
 schedule.every().day.at("0:00").do(zero_data_at_midnight)
@@ -92,6 +105,23 @@ schedule.every().day.at("0:00").do(zero_data_at_midnight)
 def degCtoF(tempc) :
 	return( float(tempc) * (9/5.0) + 32 )
 
+def dewpoint_calc(tempc, humidity) :
+	# calculate dewpoint based on temperature and humidity
+	from math import log
+	if (tempc > 0.0) :
+		Tn = 243.12
+		m = 17.62
+	else :
+		Tn = 272.62
+		m = 22.46
+	dewpoint = (Tn*(log(humidity/100.0)+((m*tempc)/(Tn+tempc)))/(m-log(humidity/100.0)-((m*tempc)/(Tn+tempc))))
+#	print("dewpoint: {0}".format(dewpoint))
+	return dewpoint
+
+
+# MQTT import and callbacks
+
+import paho.mqtt.client as mqtt
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc) :
@@ -113,6 +143,7 @@ def on_message(client, userdata, msg) :
 	msg_arrival_time_local = datetime.datetime.now()	# local time
 	msg_arrival_time_utc = datetime.datetime.utcnow()
 
+	global tempc_msg_arrival_time, tempc
 	global tempc_daily_max, tempc_daily_min, rainfall_local_9am
 	global rainmm, dailyrainmm
 
@@ -120,14 +151,11 @@ def on_message(client, userdata, msg) :
 
 	report = {}
 
-	# define as global to be able to use for dew point calculation
-	tempc = -100
-	humidity = -1
-
   # temperature data
 	if msg.topic == "weather/measurement/SHT15_temp" :
   	# in degrees Celcius
    	# convert to degrees Fahrenheit
+		tempc_msg_arrival_time = msg_arrival_time_local
 		tempc = float(msg.payload)
 		report['tempf'] = degCtoF(tempc)
 		payload.update(report)
@@ -144,11 +172,10 @@ def on_message(client, userdata, msg) :
 		humidity = float(msg.payload)
 		report['humidity'] = str(humidity)
 		payload.update(report)
-	# calculate dewpoint based on temperature and humidity
-	if ( tempc > -100 and humidity > -1 ) :
-		dewptc = 0
-		report['dewptf']  = degCtoF(dewptc)
-		client.publish("weather/dewpoint/dewpoint", dewptc)
+		if ( msg_arrival_time_local - tempc_msg_arrival_time ) < datetime.timedelta(seconds=2) :
+			dewpoint = dewpoint_calc(float(report.get('tempc',tempc)), humidity)
+			client.publish("weather/measurement/SHT15_dewpoint", dewpoint)
+			report['dewptf'] = dewpoint
 	# weather station will not report measurements from pressure sensor
 	# if error code generated when sensor is initialised, or
 	# if error code generated when taking reading
@@ -242,6 +269,8 @@ while True :
 				payload['dateutc'] = datestr
 
 				# send report
+
+				print("payload local time: {0}".format(msg_arrival_time_local))
 				print("payload to be sent: {0}".format(payload))
 
 				# POST with form-encoded data1
