@@ -10,27 +10,31 @@ nu.reset_units()
 
 import datetime
 
+import schedule
+import time
+
+
 # sends a report to the BoM WOW in format
 
-	#  Weather Data (from http://wow.metoffice.gov.uk/support/dataformats)
+#  Weather Data (from http://wow.metoffice.gov.uk/support/dataformats)
 
-	# The following is a list of items of weather data that can be uploaded to WOW.
-	# Provide each piece of information as a key/value pair, e.g. winddir=225.5 or tempf=32.2.
-	# Note that values should not be quoted or escaped.
-	# Key	          Value	                                                             Unit
-	# winddir	      Instantaneous Wind Direction	                                     Degrees (0-360)
-	# windspeedmph	Instantaneous Wind Speed                                           Miles per Hour
-	# windgustdir	  Current Wind Gust Direction (using software specific time period)	 0-360 degrees
-	# windgustmph	  Current Wind Gust (using software specific time period)            Miles per Hour
-	# humidity	    Outdoor Humidity                                                   0-100 %
-	# dewptf	      Outdoor Dewpoint                                                   Fahrenheit
-	# tempf	        Outdoor Temperature                                                Fahrenheit
-	# rainin	      Accumulated rainfall in the past 60 minutes                        Inches
-	# dailyrainin	  Inches of rain so far today                                        Inches
-	# baromin	      Barometric Pressure (see note)                                     Inches
-	# soiltempf	    Soil Temperature                                                   Fahrenheit
-	# soilmoisture	% Moisture                                                         0-100 %
-	# visibility	  Visibility                                                         Nautical Miles
+# The following is a list of items of weather data that can be uploaded to WOW.
+# Provide each piece of information as a key/value pair, e.g. winddir=225.5 or tempf=32.2.
+# Note that values should not be quoted or escaped.
+# Key	          Value	                                                             Unit
+# winddir	      Instantaneous Wind Direction	                                     Degrees (0-360)
+# windspeedmph	Instantaneous Wind Speed                                           Miles per Hour
+# windgustdir	  Current Wind Gust Direction (using software specific time period)	 0-360 degrees
+# windgustmph	  Current Wind Gust (using software specific time period)            Miles per Hour
+# humidity	    Outdoor Humidity                                                   0-100 %
+# dewptf	      Outdoor Dewpoint                                                   Fahrenheit
+# tempf	        Outdoor Temperature                                                Fahrenheit
+# rainin	      Accumulated rainfall in the past 60 minutes                        Inches
+# dailyrainin	  Inches of rain so far today                                        Inches
+# baromin	      Barometric Pressure (see note)                                     Inches
+# soiltempf	    Soil Temperature                                                   Fahrenheit
+# soilmoisture	% Moisture                                                         0-100 %
+# visibility	  Visibility                                                         Nautical Miles
 
 
 # http://wow.metoffice.gov.uk/automaticreading?siteid=123456&siteAuthenticationKey=654321&dateutc=2011-02-02+10%3A32%3A55&winddir=230&windspeedmph=12&windgustmph=12& windgustdir=25&humidity=90&dewptf=68.2&tempf=70&rainin=0&dailyrainin=5&baromin=29.1&soiltempf=25&soilmoisture=25&visibility=25&softwaretype=weathersoftware1.0
@@ -38,14 +42,20 @@ import datetime
 
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
-#global reporttime
-#global newreport
-#global sentreportwithtime
+msg_arrival_time_local = datetime.datetime.min()          # keep track of the time corresponding to the first data for a new report
+msg_arrival_time_utc   = datetime.datetime.min()
+sentreportwithtime     = datetime.datetime.now()	# keep track of the time a report was last sent
 
-reporttime = datetime.datetime.min          # keep track of the time corresponding to the first data for a new report
-sentreportwithtime = datetime.datetime.min	# keep track of the time a report was last sent
-
-newreport = True
+# define global variables for keeping track of daily data (midnight to midnight)
+tempc_daily_max = -100
+tempc_daily_min = 100
+rainfall_daily = 0
+# define global variables for keeping track of day/night data (9am to 9am)
+tempc_to9_max = -100
+tempc_to9_min = 100
+rainfall_to9 = 0
+rainmm = 0
+dailyrainmm = 0
 
 # not sure it an ordereddict is required
 
@@ -56,6 +66,32 @@ newreport = True
 #payload['siteAuthenticationKey'] = '123456'
 
 payload = {'siteid': '917806001', 'siteAuthenticationKey': '123456'}
+
+
+def zero_data_on_hour() :
+	print("data reset on hour")
+	global rainmm
+	rainmm = 0
+
+def zero_data_at_9() :
+	print("data reset at 9:00")
+	global rainfall_to9
+	rainfall_to9 = 0
+
+def zero_data_at_midnight() :
+	print("data reset at midnight")
+	global dailyrainmm
+	dailyrainmm = 0
+
+schedule.every().hour.do(zero_data_on_hour)
+schedule.every().day.at("9:00").do(zero_data_at_9)
+schedule.every().day.at("0:00").do(zero_data_at_midnight)
+
+
+# conversion of degrees Celcius to degrees
+def degCtoF(tempc) :
+	return( float(tempc) * (9/5.0) + 32 )
+
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc) :
@@ -72,32 +108,47 @@ def on_connect(client, userdata, flags, rc) :
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg) :
 
-#	msg_arrival_time = datetime.datetime.now()
-	msg_arrival_time = datetime.datetime.utcnow()
-#	print("Message arrival time is {0}".format(msg_arrival_time))
+	global msg_arrival_time_local, msg_arrival_time_utc
 
-	global newreport
-	global reporttime
+	msg_arrival_time_local = datetime.datetime.now()	# local time
+	msg_arrival_time_utc = datetime.datetime.utcnow()
 
-	if newreport == True :
-		reporttime = msg_arrival_time
-		print("New report time is {0}".format(reporttime))
-		newreport = False
+	global tempc_daily_max, tempc_daily_min, rainfall_local_9am
+	global rainmm, dailyrainmm
 
 	print(msg.topic+" "+str(msg.payload))
 
 	report = {}
 
+	# define as global to be able to use for dew point calculation
+	tempc = -100
+	humidity = -1
+
   # temperature data
 	if msg.topic == "weather/measurement/SHT15_temp" :
   	# in degrees Celcius
    	# convert to degrees Fahrenheit
-		report['tempf'] = float(msg.payload) * (9/5.0) + 32
+		tempc = float(msg.payload)
+		report['tempf'] = degCtoF(tempc)
 		payload.update(report)
+		if ( tempc > tempc_daily_max ) :
+			tempc_daily_max = tempc
+			client.publish("weather/temperature/daily_max", str(tempc_daily_max))
+			client.publish("weather/temperature/daily_max_time", str(msg_arrival_time_local))
+		if ( tempc < tempc_daily_min ) :
+			tempc_daily_min = tempc
+			client.publish("weather/temperature/daily_min", str(tempc_daily_min))
+			client.publish("weather/temperature/daily_min_time", str(msg_arrival_time_local))
 	if msg.topic == "weather/measurement/SHT15_humidity" :
-  	# as a per centage
-		report['humidity'] = msg.payload
+  	# as a percentage
+		humidity = float(msg.payload)
+		report['humidity'] = str(humidity)
 		payload.update(report)
+	# calculate dewpoint based on temperature and humidity
+	if ( tempc > -100 and humidity > -1 ) :
+		dewptc = 0
+		report['dewptf']  = degCtoF(dewptc)
+		client.publish("weather/dewpoint/dewpoint", dewptc)
 	# weather station will not report measurements from pressure sensor
 	# if error code generated when sensor is initialised, or
 	# if error code generated when taking reading
@@ -122,9 +173,17 @@ def on_message(client, userdata, msg) :
 	if msg.topic == "weather/measurement/rain" :
   	# in millimetres
   	# convert to inches
-  	# need to zero at midnight
-		report['dailyrainin'] = (float(msg.payload)*nu.mm)/nu.inch
+  	# resets automatically on hour
+		rainmm += float(msg.payload)
+		report['rainin'] = (rainmm*nu.mm)/nu.inch
 		payload.update(report)
+		# need to zero at midnight (occurs in main loop - value here will have already been reset)
+		dailyrainmm += float(msg.payload)
+		report['dailyrainin'] = (dailyrainmm*nu.mm)/nu.inch
+		payload.update(report)
+		client.publish("weather/rainfall/sincemidnight", str(dailyrainmm))
+		client.publish("weather/rainfall/since9am", str(dailyrainmm))
+
 
 
 
@@ -135,8 +194,8 @@ client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
-#client_ip = "192.168.1.55"
-client_ip = "localhost"
+client_ip = "192.168.1.55"
+#client_ip = "localhost"
 client.connect(client_ip, 1883, 60) # address of broker, broker port,
 
 client.loop_start()
@@ -146,38 +205,57 @@ while True :
 
 	try :
 
+		schedule.run_pending()
+
+		# reset daily measurements if midnight local time
+#		if ( datetime.datetime.now() ) :
+#			reset_daily_measuremets()
+		# reset day/night measurements if 9am local time
+		#today9am = now.replace(hour=9, minute=0, second=0, microsecond=0)
+		# reset hourly measurements (rain)
+
 		# get current time and if greater than wait send a report
 		reportWait = 2      # time (seconds) to wait to ensure all measurements have been received
 		reportInterval = 15	# interval (minutes) at which a new report is sent to BoM WOW
 
-		if ( ( datetime.datetime.now() - reporttime ) > datetime.timedelta(seconds=reportWait) ) and ( ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) ) :
+		assert reportInterval > 5, "reportInterval must be greater than interval between measurements: %r" % 5
 
-			# add time to report
-			# The date must be in the following format: YYYY-mm-DD HH:mm:ss,
-			# where ':' is encoded as %3A, and the space is encoded as either '+' or %20.
-			# An example, valid date would be: 2011-02-29+10%3A32%3A55, for the 2nd of Feb, 2011 at 10:32:55.
-			# Note that the time is in 24 hour format.
-			# Also note that the date must be adjusted to UTC time - equivalent to the GMT time zone.
-			format = "%Y-%m-%d+%H:%M:%S"
-			datestr = reporttime.strftime(format)
-			datestr = datestr.replace(':', '%3A')
-			payload['dateutc'] = datestr
+#		if ( ( datetime.datetime.now() - reporttime ) > datetime.timedelta(seconds=reportWait) ) and ( ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) ) :
+#		if ( reporttime - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) :
 
-			# send report
-			print("payload to be sent: {0}".format(payload))
+		# ensure the report data is more up-to-date than previously sent message
+		# should prevent repots being sent if sensor is off
+		if ( msg_arrival_time_local > sentreportwithtime ) :
 
-			# POST with form-encoded data1
-		#  r = requests.post(url, data=payload)
+			# only send reports every 'reportInterval' minutes
+			if ( datetime.datetime.now() - sentreportwithtime ) > datetime.timedelta(minutes=reportInterval) :
 
-			# All requests will return a status code.
-			# A success is indicated by 200.
-			# Anything else is a failure.
-			# A human readable error message will accompany all errors in JSON format.
-		#  print("POST request status code: {0}".format(r.json))
+				# add time to report
+				# The date must be in the following format: YYYY-mm-DD HH:mm:ss,
+				# where ':' is encoded as %3A, and the space is encoded as either '+' or %20.
+				# An example, valid date would be: 2011-02-29+10%3A32%3A55, for the 2nd of Feb, 2011 at 10:32:55.
+				# Note that the time is in 24 hour format.
+				# Also note that the date must be adjusted to UTC time - equivalent to the GMT time zone.
+				format = "%Y-%m-%d+%H:%M:%S"
+				datestr = msg_arrival_time_utc.strftime(format)
+				datestr = datestr.replace(':', '%3A')
+				payload['dateutc'] = datestr
 
-			# reset flags
-			newreport = True
-			sentreportwithtime = reporttime
+				# send report
+				print("payload to be sent: {0}".format(payload))
+
+				# POST with form-encoded data1
+			#  r = requests.post(url, data=payload)
+
+				# All requests will return a status code.
+				# A success is indicated by 200.
+				# Anything else is a failure.
+				# A human readable error message will accompany all errors in JSON format.
+			#  print("POST request status code: {0}".format(r.json))
+
+				# reset flags
+	#			newreport = True
+				sentreportwithtime = msg_arrival_time_local
 
 	except KeyboardInterrupt :      #Triggered by pressing Ctrl+C
 
