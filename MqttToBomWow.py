@@ -174,8 +174,9 @@ def on_message(client, userdata, msg) :
 		payload.update(report)
 		if ( msg_arrival_time_local - tempc_msg_arrival_time ) < datetime.timedelta(seconds=2) :
 			dewpoint = dewpoint_calc(float(report.get('tempc',tempc)), humidity)
-			client.publish("weather/measurement/SHT15_dewpoint", dewpoint)
+			client.publish("weather/dewpoint/SHT15_dewpoint", dewpoint)
 			report['dewptf'] = dewpoint
+			payload.update(report)
 	# weather station will not report measurements from pressure sensor
 	# if error code generated when sensor is initialised, or
 	# if error code generated when taking reading
@@ -227,12 +228,13 @@ client.connect(client_ip, 1883, 60) # address of broker, broker port,
 
 client.loop_start()
 
+schedule.run_pending()
+
+
 # Loop continuously
 while True :
 
 	try :
-
-		schedule.run_pending()
 
 		# reset daily measurements if midnight local time
 #		if ( datetime.datetime.now() ) :
