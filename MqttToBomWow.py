@@ -42,8 +42,8 @@ import time
 
 url = 'http://wow.metoffice.gov.uk/automaticreading?'
 
-msg_arrival_time_local = datetime.datetime.min()          # keep track of the time corresponding to the first data for a new report
-msg_arrival_time_utc   = datetime.datetime.min()
+msg_arrival_time_local = datetime.datetime.min          # keep track of the time corresponding to the first data for a new report
+msg_arrival_time_utc   = datetime.datetime.min
 sentreportwithtime     = datetime.datetime.now()	# keep track of the time a report was last sent
 
 # define global variables for keeping track of daily data (midnight to midnight)
