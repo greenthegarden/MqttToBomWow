@@ -228,11 +228,11 @@ client.connect(client_ip, 1883, 60) # address of broker, broker port,
 
 client.loop_start()
 
-schedule.run_pending()
-
 
 # Loop continuously
 while True :
+
+	schedule.run_pending()
 
 	try :
 
