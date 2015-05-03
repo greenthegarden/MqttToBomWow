@@ -98,7 +98,7 @@ def zero_data_at_midnight() :
 import schedule
 import time
 
-schedule.every().hour.do(zero_data_on_hour)
+schedule.every().hour.at(':00').do(zero_data_on_hour)
 schedule.every().day.at("9:00").do(zero_data_at_9)
 schedule.every().day.at("0:00").do(zero_data_at_midnight)
 
